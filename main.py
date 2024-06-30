@@ -63,7 +63,8 @@ def main():
 
     # Save the results to a CSV file
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-    filename = f"sites_with_keyword_{timestamp}.csv"
+    keyword_as_filename = KEYWORD.replace(".", "_")
+    filename = f"sites_with_{keyword_as_filename}_{timestamp}.csv"
 
     sites_with_keyword[["origin", "keyword_line"]].to_csv(
         filename, index=False
