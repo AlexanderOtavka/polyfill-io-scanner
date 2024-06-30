@@ -30,14 +30,16 @@ logging.basicConfig(
 
 def main():
     logging.info("Starting the script.")
-    top_sites = get_top_sites(url=TOP_SITES_URL, cache_file=TOP_SITES_CACHE)
+    top_sites: pd.DataFrame = get_top_sites(
+        url=TOP_SITES_URL, cache_file=TOP_SITES_CACHE
+    )
     logging.info(f"Loaded {len(top_sites)} top sites.")
-    
+
     ranks = top_sites["rank"].unique()
     logging.info(f"Unique ranks: {ranks}")
 
     # Filter just the most popular sites
-    max_rank_sites = top_sites[top_sites["rank"] <= MAX_RANK]
+    max_rank_sites: pd.DataFrame = top_sites[top_sites["rank"] <= MAX_RANK]
     logging.info(f"Filtered to {len(max_rank_sites)} sites with rank <= {MAX_RANK}.")
 
     # Limit the number of results
@@ -56,7 +58,9 @@ def main():
     max_rank_sites["keyword_line"] = max_rank_sites["homepage_content"].apply(
         find_keyword_context, keyword=KEYWORD
     )
-    sites_with_keyword = max_rank_sites[max_rank_sites["keyword_line"].notnull()]
+    sites_with_keyword: pd.DataFrame = max_rank_sites[
+        max_rank_sites["keyword_line"].notnull()
+    ]
     logging.info(f"Found {len(sites_with_keyword)} sites with the keyword '{KEYWORD}'.")
 
     print(sites_with_keyword[["origin", "keyword_line"]])
@@ -66,9 +70,7 @@ def main():
     keyword_as_filename = KEYWORD.replace(".", "_")
     filename = f"sites_with_{keyword_as_filename}_{timestamp}.csv"
 
-    sites_with_keyword[["origin", "keyword_line"]].to_csv(
-        filename, index=False
-    )
+    sites_with_keyword[["origin", "keyword_line"]].to_csv(filename, index=False)
 
 
 def get_top_sites(url, cache_file):
@@ -77,8 +79,8 @@ def get_top_sites(url, cache_file):
 
     Example dataframe:
     ```
-                                          origin  rank
-    1                   https://web.facebook.com  1000
+                         origin  rank
+    0  https://web.facebook.com  1000
     ```
     """
 
