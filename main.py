@@ -33,8 +33,49 @@ def main():
 
     # Fetch the home page of each site, and scan for polyfill.io
     fetch_homepages_in_parallel(max_rank_sites)
+    logging.info("Finished fetching homepages.")
 
     print(max_rank_sites)
+
+
+def get_top_sites(url, cache_file):
+    """
+    Download the top sites CSV file and return it as a pandas DataFrame.
+
+    Example dataframe:
+    ```
+                                          origin  rank
+    0                        https://xxxhindi.to  1000
+    1                 https://kuttymovies.com.ua  1000
+    2                   https://web.facebook.com  1000
+    3    https://play.contents.plus-msg.auone.jp  1000
+    4                           https://yatv.pro  1000
+    ```
+    """
+
+    # Check if the cache file exists
+    if os.path.exists(cache_file):
+        # Read the content from the cache file
+        with open(cache_file, "rb") as f:
+            compressed_content = f.read()
+    else:
+        # Send a GET request to the URL
+        response = requests.get(url)
+        # Ensure the request was successful
+        if not response.ok:
+            raise Exception(
+                f"Failed to download the file. Status code: " f"{response.status_code}"
+            )
+        # Cache the content of the response on disk
+        with open(cache_file, "wb") as f:
+            f.write(response.content)
+        compressed_content = response.content
+
+    # Decompress the content
+    content = gzip.decompress(compressed_content)
+
+    # Read the content into a pandas DataFrame
+    return pd.read_csv(io.BytesIO(content))
 
 
 def fetch_homepages_in_parallel(max_rank_sites: pd.DataFrame):
@@ -76,46 +117,6 @@ def fetch_homepage_content(url, timeout=None):
     except Exception as e:
         logging.error(f"Failed to fetch the homepage of {url}. Error: {e}")
         return ""
-
-
-def get_top_sites(url, cache_file):
-    """
-    Download the top sites CSV file and return it as a pandas DataFrame.
-
-    Example dataframe:
-    ```
-                                          origin  rank
-    0                        https://xxxhindi.to  1000
-    1                 https://kuttymovies.com.ua  1000
-    2                   https://web.facebook.com  1000
-    3    https://play.contents.plus-msg.auone.jp  1000
-    4                           https://yatv.pro  1000
-    ```
-    """
-
-    # Check if the cache file exists
-    if os.path.exists(cache_file):
-        # Read the content from the cache file
-        with open(cache_file, "rb") as f:
-            compressed_content = f.read()
-    else:
-        # Send a GET request to the URL
-        response = requests.get(url)
-        # Ensure the request was successful
-        if not response.ok:
-            raise Exception(
-                f"Failed to download the file. Status code: " f"{response.status_code}"
-            )
-        # Cache the content of the response on disk
-        with open(cache_file, "wb") as f:
-            f.write(response.content)
-        compressed_content = response.content
-
-    # Decompress the content
-    content = gzip.decompress(compressed_content)
-
-    # Read the content into a pandas DataFrame
-    return pd.read_csv(io.BytesIO(content))
 
 
 if __name__ == "__main__":
