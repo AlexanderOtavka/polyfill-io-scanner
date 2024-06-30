@@ -45,11 +45,7 @@ def get_top_sites(url, cache_file):
     Example dataframe:
     ```
                                           origin  rank
-    0                        https://xxxhindi.to  1000
-    1                 https://kuttymovies.com.ua  1000
-    2                   https://web.facebook.com  1000
-    3    https://play.contents.plus-msg.auone.jp  1000
-    4                           https://yatv.pro  1000
+    1                   https://web.facebook.com  1000
     ```
     """
 
