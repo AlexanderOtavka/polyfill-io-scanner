@@ -45,7 +45,7 @@ def fetch_homepages_in_parallel(max_rank_sites: pd.DataFrame):
     with ThreadPoolExecutor(max_workers=10) as executor:
         # Submit all fetch tasks and create a dictionary of future to url
         future_to_url = {
-            executor.submit(fetch_homepage_content, url): url
+            executor.submit(fetch_homepage_content, url, timeout=10): url
             for url in max_rank_sites["origin"]
         }
 
@@ -66,12 +66,12 @@ def fetch_homepages_in_parallel(max_rank_sites: pd.DataFrame):
                 logging.error(f"Error fetching content for {url}: {e}")
 
 
-def fetch_homepage_content(url):
+def fetch_homepage_content(url, timeout=None):
     """
     Fetch the content of the homepage of a given URL.
     """
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=timeout)
         return response.text
     except Exception as e:
         logging.error(f"Failed to fetch the homepage of {url}. Error: {e}")
