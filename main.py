@@ -11,6 +11,13 @@ from tqdm import tqdm
 TOP_SITES_URL = "https://raw.githubusercontent.com/zakird/crux-top-lists/main/data/global/current.csv.gz"
 TOP_SITES_CACHE = "./cache-top-sites.csv.gz"
 
+# Maximum number of sites to consider
+MAX_RANK = 1000
+MAX_NUM_SITES = 50
+
+# Keyword to search for in the homepage content
+KEYWORD = "googletagmanager.com"
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -24,18 +31,27 @@ def main():
     logging.info(f"Loaded {len(top_sites)} top sites.")
 
     # Filter just the most popular sites
-    max_rank = 1000
-    max_rank_sites = top_sites[top_sites["rank"] <= max_rank]
-    logging.info(f"Filtered to {len(max_rank_sites)} sites with rank <= {max_rank}.")
+    max_rank_sites = top_sites[top_sites["rank"] <= MAX_RANK]
+    logging.info(f"Filtered to {len(max_rank_sites)} sites with rank <= {MAX_RANK}.")
 
-    # Limit to just ten sites for testing
-    max_rank_sites = max_rank_sites.head(50)
+    # Limit the number of results
+    max_rank_sites = max_rank_sites.head(MAX_NUM_SITES)
+    logging.info(f"Limiting to the top {MAX_NUM_SITES} sites.")
 
     # Fetch the home page of each site, and scan for polyfill.io
     fetch_homepages_in_parallel(max_rank_sites)
     logging.info("Finished fetching homepages.")
+    
+    # Filter out sites that have no homepage content
+    max_rank_sites = max_rank_sites[max_rank_sites["homepage_content"].str.len() > 0]
+    logging.info(f"Filtered to {len(max_rank_sites)} sites with homepage content.")
+    
+    # Filter sites that use our keyword
+    has_polyfill = max_rank_sites["homepage_content"].str.contains(KEYWORD, case=False, na=False)
+    sites_with_keyword = max_rank_sites[has_polyfill]
+    logging.info(f"Found {len(sites_with_keyword)} sites with the keyword '{KEYWORD}'.")
 
-    print(max_rank_sites)
+    print(sites_with_keyword[["origin"]])
 
 
 def get_top_sites(url, cache_file):
@@ -79,7 +95,7 @@ def fetch_homepages_in_parallel(max_rank_sites: pd.DataFrame):
     Fetch the homepages of a list of URLs in parallel.
     """
     # Use ThreadPoolExecutor to fetch homepages in parallel
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=20) as executor:
         # Submit all fetch tasks and create a dictionary of future to url
         future_to_url = {
             executor.submit(fetch_homepage_content, url, timeout=10): url
